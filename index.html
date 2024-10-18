@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Particle System</title>
+    <style>
+        body, html {
+            margin: 0;
+            overflow: hidden;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #111;
+        }
+        #canvas {
+            display: block;
+        }
+        .controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .controls label {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="controls">
+        <label>
+            Number of Particles: 
+            <input type="range" id="numParticles" min="10" max="500" value="100">
+            <span id="numParticlesValue">100</span>
+        </label>
+        <label>
+            Max Velocity: 
+            <input type="range" id="maxVelocity" min="0.1" max="5" step="0.1" value="2">
+            <span id="maxVelocityValue">2.0</span>
+        </label>
+        <label>
+            Particle Size: 
+            <input type="range" id="particleSize" min="1" max="10" value="3">
+            <span id="particleSizeValue">3</span>
+        </label>
+        <label>
+            Interaction Radius: 
+            <input type="range" id="interactionRadius" min="50" max="300" value="100">
+            <span id="interactionRadiusValue">100</span>
+        </label>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const mouse = { x: null, y: null };
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Controls
+        const numParticlesInput = document.getElementById('numParticles');
+        const maxVelocityInput = document.getElementById('maxVelocity');
+        const particleSizeInput = document.getElementById('particleSize');
+        const interactionRadiusInput = document.getElementById('interactionRadius');
+
+        document.getElementById('numParticlesValue').textContent = numParticlesInput.value;
+        document.getElementById('maxVelocityValue').textContent = maxVelocityInput.value;
+        document.getElementById('particleSizeValue').textContent = particleSizeInput.value;
+        document.getElementById('interactionRadiusValue').textContent = interactionRadiusInput.value;
+
+        // Update control labels on change
+        numParticlesInput.oninput = function () {
+            document.getElementById('numParticlesValue').textContent = this.value;
+            initParticles();
+        };
+        maxVelocityInput.oninput = function () {
+            document.getElementById('maxVelocityValue').textContent = this.value;
+        };
+        particleSizeInput.oninput = function () {
+            document.getElementById('particleSizeValue').textContent = this.value;
+        };
+        interactionRadiusInput.oninput = function () {
+            document.getElementById('interactionRadiusValue').textContent = this.value;
+        };
+
+        // Particle class
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.velocityX = (Math.random() - 0.5) * maxVelocityInput.value;
+                this.velocityY = (Math.random() - 0.5) * maxVelocityInput.value;
+                this.size = particleSizeInput.value;
+            }
+
+            update() {
+                if (this.x < 0 || this.x > canvas.width) {
+                    this.velocityX = -this.velocityX;
+                }
+                if (this.y < 0 || this.y > canvas.height) {
+                    this.velocityY = -this.velocityY;
+                }
+                this.x += this.velocityX;
+                this.y += this.velocityY;
+
+                // Interaction with mouse
+                const dist = Math.hypot(this.x - mouse.x, this.y - mouse.y);
+                if (dist < interactionRadiusInput.value && dist > 0) {
+                    this.x += (this.x - mouse.x) / dist * 5;
+                    this.y += (this.y - mouse.y) / dist * 5;
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false);
+                ctx.fillStyle = 'white';
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < numParticlesInput.value; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+
+        // Mouse movement listener
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = event.x;
+            mouse.y = event.y;
+        });
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initParticles();
+        });
+
+        initParticles();
+        animate();
+    </script>
+</body>
+</html>
